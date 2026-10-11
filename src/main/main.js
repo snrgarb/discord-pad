@@ -93,6 +93,9 @@ function createWindow() {
     mainWindow.focus();
   });
   mainWindow.on('closed', () => { mainWindow = null; });
+  // The preload ignores the controller unless this window has focus.
+  mainWindow.on('focus', () => mainWindow.webContents.send('pad:window-focus', true));
+  mainWindow.on('blur', () => mainWindow.webContents.send('pad:window-focus', false));
 
   // Stay on Discord; everything else opens in the default browser.
   wc.on('will-navigate', (event, url) => {
