@@ -26,6 +26,24 @@ On-screen keyboard: A types, X deletes, Y space, LT shift, Menu sends, B closes.
 
 Button mapping, zoom and full screen live in `%APPDATA%\Discord Pad\settings.json`.
 
+## Hiding Discord elements
+
+Two layers of CSS overrides are applied on top of Discord:
+
+**Presets**, toggled in the `hide` section of `settings.json` (restart the app after changing them):
+
+| Preset | Hides | Default |
+|---|---|---|
+| `nitroUpsells` | Nitro and Shop links and upsell banners | on |
+| `downloadApps` | "Download Apps" button in the server list | on |
+| `giftButton` | Gift button in the message box | on |
+| `helpButton` | Help (?) button in the header | on |
+| `stickerGifButtons` | Sticker, GIF and Apps buttons in the message box | off |
+| `memberList` | Member list on the right of servers | off |
+| `activityFeed` | "Active Now" panel on the Friends page | off |
+
+**Your own CSS** in `%APPDATA%\Discord Pad\custom.css`, created on first launch. It loads after the presets and re-applies as soon as you save the file, so you can tweak it live. Discord's class names are hashed, so match on fragments (`[class*="bannerImage"]`) or aria-labels (`[aria-label="Inbox"]`). Hidden elements are skipped by controller navigation automatically.
+
 ## Develop
 
 ```sh

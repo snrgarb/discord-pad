@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { PRESETS, defaultHide } = require('./css-overrides');
 
 // Actions the preload understands. Mapping values must come from this list.
 const ACTIONS = [
@@ -19,6 +20,8 @@ const DEFAULTS = Object.freeze({
   // Hide the mouse cursor while the controller is being used.
   hideCursor: true,
   stickDeadzone: 0.5,
+  // Built-in CSS presets that hide Discord elements (see css-overrides.js).
+  hide: Object.freeze(defaultHide()),
   mapping: Object.freeze({
     0: 'activate',      // A
     1: 'back',          // B
@@ -41,7 +44,7 @@ function clamp(n, lo, hi) {
 
 // Merge user settings over defaults, dropping anything malformed.
 function normalize(raw) {
-  const out = { ...DEFAULTS, mapping: { ...DEFAULTS.mapping } };
+  const out = { ...DEFAULTS, hide: { ...DEFAULTS.hide }, mapping: { ...DEFAULTS.mapping } };
   if (!raw || typeof raw !== 'object') return out;
 
   if (typeof raw.fullscreen === 'boolean') out.fullscreen = raw.fullscreen;
@@ -49,6 +52,12 @@ function normalize(raw) {
   if (typeof raw.hideCursor === 'boolean') out.hideCursor = raw.hideCursor;
   if (Number.isFinite(raw.zoomFactor)) out.zoomFactor = clamp(raw.zoomFactor, 0.5, 3);
   if (Number.isFinite(raw.stickDeadzone)) out.stickDeadzone = clamp(raw.stickDeadzone, 0.1, 0.9);
+
+  if (raw.hide && typeof raw.hide === 'object') {
+    for (const [id, on] of Object.entries(raw.hide)) {
+      if (Object.hasOwn(PRESETS, id) && typeof on === 'boolean') out.hide[id] = on;
+    }
+  }
 
   if (raw.mapping && typeof raw.mapping === 'object') {
     for (const [key, action] of Object.entries(raw.mapping)) {
@@ -68,7 +77,10 @@ function settingsPath(userDataDir) {
 function load(userDataDir) {
   const file = settingsPath(userDataDir);
   try {
-    return normalize(JSON.parse(fs.readFileSync(file, 'utf8')));
+    const settings = normalize(JSON.parse(fs.readFileSync(file, 'utf8')));
+    // Write back so options added in newer versions show up in the file.
+    save(userDataDir, settings);
+    return settings;
   } catch (err) {
     if (err.code !== 'ENOENT') console.warn(`Ignoring unreadable settings at ${file}: ${err.message}`);
     const defaults = normalize(null);

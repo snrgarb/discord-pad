@@ -5,6 +5,7 @@ const {
   app, BrowserWindow, ipcMain, session, shell, desktopCapturer, powerSaveBlocker,
 } = require('electron');
 const settingsStore = require('./settings');
+const { CssOverrides } = require('./css-overrides');
 const { resolveChord, sanitizeText, chordEvents } = require('./keys');
 const { isDiscordUrl, chromeUserAgent } = require('./origins');
 
@@ -116,6 +117,11 @@ function createWindow() {
       toggleFullscreen();
     }
   });
+
+  new CssOverrides(wc, {
+    userDataDir: app.getPath('userData'),
+    getHide: () => settings.hide,
+  }).start();
 
   wc.loadURL(START_URL);
 }
