@@ -2,7 +2,7 @@ import { ipcRenderer } from 'electron';
 import { GamepadReader, mergePads, BUTTON } from './gamepad.mjs';
 import { createOverlay } from './overlay.mjs';
 import {
-  FocusManager, activate, scrollFrom,
+  FocusManager, activate, scrollFrom, textFieldOf,
 } from './focus.mjs';
 import { OnScreenKeyboard } from './osk.mjs';
 import {
@@ -37,7 +37,12 @@ async function main() {
   if (!settings) return;
 
   const overlay = createOverlay();
-  const focus = new FocusManager(overlay);
+  // Landing on a text field shows how to type into it.
+  const focus = new FocusManager(overlay, {
+    onLand: (el) => {
+      if (textFieldOf(el)) overlay.toast('Press A to open the keyboard', { ms: 1600 });
+    },
+  });
   const osk = new OnScreenKeyboard(overlay.osk, {
     typeText,
     sendChord: chord,
@@ -66,6 +71,14 @@ async function main() {
   };
   addEventListener('mousemove', () => setControllerMode(false), { passive: true });
 
+  // When Discord moves focus into a text field itself (quick switcher,
+  // search, a dialog opening), follow it so A opens the keyboard there.
+  addEventListener('focusin', (e) => {
+    const el = e.target;
+    if (!focus.active || osk.visible || !(el instanceof Element) || !el.matches(TEXT_INPUT)) return;
+    focus.adopt(el);
+  }, true);
+
   let lastPads = [];
   const rumble = () => {
     for (const pad of lastPads) {
@@ -86,9 +99,10 @@ async function main() {
     activate() {
       const el = focus.ensure();
       if (!el) return;
-      if (el.matches(TEXT_INPUT)) {
-        el.focus();
-        osk.open(el);
+      const field = textFieldOf(el);
+      if (field) {
+        field.focus();
+        osk.open(field);
       } else {
         activate(el);
       }

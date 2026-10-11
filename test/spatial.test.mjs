@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  pickNext, nearestTo, sameBox, score, isSliver,
+  pickNext, nearestTo, sameBox, score, isSliver, columnForX, planMove,
 } from '../src/preload/spatial.mjs';
 
 const r = (left, top, w = 100, h = 40) => ({ left, top, right: left + w, bottom: top + h });
@@ -52,4 +52,29 @@ test('isSliver flags thin dividers but not buttons or list rows', () => {
   assert.ok(!isSliver(r(0, 0, 40, 40)));     // icon button
   assert.ok(!isSliver(r(0, 0, 400, 40)));    // channel row
   assert.ok(!isSliver(r(0, 0, 10, 10)));     // small square badge
+});
+
+test('columnForX splits servers, sidebar and main', () => {
+  const bounds = { serversRight: 72, sidebarRight: 312 };
+  assert.equal(columnForX(36, bounds), 0);
+  assert.equal(columnForX(200, bounds), 1);
+  assert.equal(columnForX(900, bounds), 2);
+});
+
+test('planMove: left/right jump whole columns from the sidebars', () => {
+  assert.deepEqual(planMove(0, 'right'), { within: false, jumpTo: 1 });
+  assert.deepEqual(planMove(1, 'right'), { within: false, jumpTo: 2 });
+  assert.deepEqual(planMove(1, 'left'), { within: false, jumpTo: 0 });
+  assert.deepEqual(planMove(0, 'left'), { within: false, jumpTo: null });
+});
+
+test('planMove: up/down stay in the column', () => {
+  for (const col of [0, 1, 2]) {
+    assert.deepEqual(planMove(col, 'down'), { within: true, jumpTo: null });
+  }
+});
+
+test('planMove: main area moves between controls, jumps back at the left edge', () => {
+  assert.deepEqual(planMove(2, 'left'), { within: true, jumpTo: 1 });
+  assert.deepEqual(planMove(2, 'right'), { within: true, jumpTo: null });
 });

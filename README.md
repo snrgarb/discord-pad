@@ -8,7 +8,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the design.
 
 | Button | Action |
 |---|---|
-| D-pad / left stick | Move the focus ring |
+| D-pad / left stick | Move the focus ring. Left/right jump between the three columns (servers, channels/DMs, main); up/down move within a column |
 | A | Select (opens the on-screen keyboard on text boxes) |
 | B | Back / close / decline call |
 | X | Mute / unmute |
@@ -22,7 +22,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the design.
 | View | Button help |
 | View + Menu, or F11 | Toggle full screen |
 
-On-screen keyboard: A types, X deletes, Y space, LT shift, Menu sends, B closes.
+Landing on any text field (message box, search, quick switcher) shows a hint; press A to open the on-screen keyboard. On-screen keyboard: A types, X deletes, Y space, LT shift, Menu sends, B closes.
 
 Button mapping, zoom and full screen live in `%APPDATA%\Discord Pad\settings.json`.
 
