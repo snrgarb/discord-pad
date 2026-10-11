@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyListItem, looksLikeSidebar, outermostSameColumn } from '../src/preload/adapter-rules.mjs';
+import {
+  classifyListItem, looksLikeSidebar, outermostSameColumn, railShift,
+} from '../src/preload/adapter-rules.mjs';
 
 test('classifyListItem tells DMs from channels', () => {
   assert.equal(classifyListItem({ href: '/channels/@me/123456' }), 'dm');
@@ -25,4 +27,10 @@ test('outermostSameColumn climbs wrappers until the box changes', () => {
   const chain = [r(72, 50, 240, 800), r(72, 0, 240, 1000), r(72, 0, 241, 1000), r(0, 0, 1600, 1000)];
   assert.equal(outermostSameColumn(chain), 2);
   assert.equal(outermostSameColumn([r(0, 0, 10, 10)]), 0);
+});
+
+test('railShift is how far the icons sit left of the rail centre', () => {
+  assert.equal(railShift(r(0, 0, 88, 1000), r(12, 0, 48, 48)), 8);
+  assert.equal(railShift(r(0, 0, 88, 1000), r(20, 0, 48, 48)), 0);
+  assert.equal(railShift(r(0, 0, 88, 1000), r(30, 0, 48, 48)), -10);
 });

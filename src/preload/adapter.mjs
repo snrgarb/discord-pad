@@ -3,7 +3,9 @@
 // hashed, so this works from roles, aria-labels, hrefs and geometry. It only
 // adds/removes its own attributes; it never moves or creates Discord nodes.
 
-import { classifyListItem, looksLikeSidebar, outermostSameColumn } from './adapter-rules.mjs';
+import {
+  classifyListItem, looksLikeSidebar, outermostSameColumn, railShift,
+} from './adapter-rules.mjs';
 import { SERVER_COLUMN, CHANNEL_COLUMN, SELECTED } from './selectors.mjs';
 
 const ATTRS = ['data-dp-region', 'data-dp-role', 'data-dp-selected', 'data-dp-focus'];
@@ -25,6 +27,7 @@ function clearAll() {
   }
   document.documentElement.removeAttribute('data-dp-root');
   document.documentElement.removeAttribute('data-dp-mode');
+  for (const el of document.querySelectorAll('[style*="--dp-rail-shift"]')) el.style.removeProperty('--dp-rail-shift');
 }
 
 function findRegions() {
@@ -80,6 +83,21 @@ function markRows(regions) {
   if (composer) mark(composer.closest('form') || composer, 'data-dp-role', 'composer');
 }
 
+// Shift the server icons so they sit in the middle of the widened rail,
+// whatever Discord's inner list width is.
+function centreRail(rail, attempts = 3) {
+  const icon = [...rail.querySelectorAll('[role="treeitem"]')].find(visible);
+  if (!icon) return;
+  const raw = rail.style.getPropertyValue('--dp-rail-shift');
+  const current = raw ? parseFloat(raw) : 8;
+  const delta = railShift(rail.getBoundingClientRect(), icon.getBoundingClientRect());
+  if (Math.abs(delta) < 1) return;
+  rail.style.setProperty('--dp-rail-shift', `${Math.max(0, Math.round(current + delta))}px`);
+  // Depending on Discord's inner layout padding may move the icons less
+  // than 1:1, so check again once it has applied.
+  if (attempts > 1) requestAnimationFrame(() => centreRail(rail, attempts - 1));
+}
+
 export class CouchAdapter {
   constructor() {
     this.enabled = false;
@@ -121,6 +139,7 @@ export class CouchAdapter {
     const regions = findRegions();
     if (!regions) return;
     mark(regions.servers, 'data-dp-region', 'servers');
+    centreRail(regions.servers);
     if (regions.sidebar) mark(regions.sidebar, 'data-dp-region', 'channels');
     if (regions.main) mark(regions.main, 'data-dp-region', 'main');
     markRows(regions);

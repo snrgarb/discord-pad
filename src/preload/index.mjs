@@ -27,7 +27,6 @@ async function main() {
   const adapter = new CouchAdapter();
   const applyTheme = () => {
     adapter.setEnabled(settings.couchUi);
-    overlay.setTheme(settings.couchUi ? 'couch' : null);
   };
   applyTheme();
 

@@ -82,3 +82,10 @@ test('Couch UI CSS only targets adapter markers and theme variables', () => {
     assert.match(sel, /data-dp-/, sel);
   }
 });
+
+test('Couch UI keeps Discord\'s stock colours', () => {
+  // Only Discord's own variables (with a fallback) may set colours.
+  const code = COUCH_CSS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/var\([^)]*\)/g, '');
+  assert.doesNotMatch(code, /#[0-9a-f]{3,8}\b|rgba?\(/i);
+  assert.doesNotMatch(COUCH_CSS, /--background-primary\s*:/);
+});

@@ -36,3 +36,11 @@ export function outermostSameColumn(rects, tolerance = 4) {
   }
   return best;
 }
+
+// How far (px) to move the server icons right so their centre lines up with
+// the rail's centre. Negative means they're already right of centre.
+export function railShift(railRect, iconRect) {
+  const railCentre = (railRect.left + railRect.right) / 2;
+  const iconCentre = (iconRect.left + iconRect.right) / 2;
+  return railCentre - iconCentre;
+}
