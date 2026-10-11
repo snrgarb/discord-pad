@@ -23,6 +23,15 @@ export const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+// Matched by FOCUSABLE but never worth landing on: sidebar resize handles
+// and dividers (Discord gives the sidebar resizer a tabindex).
+export const NOT_NAVIGABLE = [
+  '[role="separator"]',
+  '[aria-label*="resize" i]',
+  '[class*="resizeHandle"]',
+  '[class*="sash"]',
+].join(',');
+
 // Topmost layer that should capture navigation (modals, menus, popouts).
 export const LAYERS = '[role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"]';
 

@@ -1,5 +1,7 @@
-import { pickNext, nearestTo, sameBox } from './spatial.mjs';
-import { FOCUSABLE, LAYERS } from './selectors.mjs';
+import {
+  pickNext, nearestTo, sameBox, isSliver,
+} from './spatial.mjs';
+import { FOCUSABLE, LAYERS, NOT_NAVIGABLE } from './selectors.mjs';
 
 const MIN_SIZE = 4;
 
@@ -30,8 +32,9 @@ export function currentScope() {
 export function collectCandidates(scope = currentScope()) {
   const items = [];
   for (const el of scope.querySelectorAll(FOCUSABLE)) {
-    if (el.matches('[disabled], [aria-disabled="true"]')) continue;
+    if (el.matches('[disabled], [aria-disabled="true"]') || el.matches(NOT_NAVIGABLE)) continue;
     const rect = el.getBoundingClientRect();
+    if (isSliver(rect)) continue;
     if (!isVisible(el, rect)) continue;
     items.push({ el, rect });
   }

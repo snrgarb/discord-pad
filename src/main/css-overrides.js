@@ -16,6 +16,13 @@ const PRESETS = Object.freeze({
       [class*="premiumPromo"], [class*="nitroUpsell"], [class*="upsellBanner"],
       [class*="premiumTrialOffer"], [class*="shopEntry"] { display: none !important; }`,
   },
+  quests: {
+    label: 'Quests link in the direct messages list',
+    default: true,
+    css: `
+      a[href="/quest-home"], a[href^="/quest-home/"], a[href^="/discovery/quests"],
+      [data-list-item-id$="___quests"] { display: none !important; }`,
+  },
   downloadApps: {
     label: '"Download Apps" button in the server list',
     default: true,

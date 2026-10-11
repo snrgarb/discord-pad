@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickNext, nearestTo, sameBox, score } from '../src/preload/spatial.mjs';
+import {
+  pickNext, nearestTo, sameBox, score, isSliver,
+} from '../src/preload/spatial.mjs';
 
 const r = (left, top, w = 100, h = 40) => ({ left, top, right: left + w, bottom: top + h });
 
@@ -42,4 +44,12 @@ test('nearestTo finds the closest center', () => {
 test('sameBox detects wrapper elements', () => {
   assert.ok(sameBox(r(0, 0), r(2, 1, 97, 38)));
   assert.ok(!sameBox(r(0, 0), r(0, 0, 50, 40)));
+});
+
+test('isSliver flags thin dividers but not buttons or list rows', () => {
+  assert.ok(isSliver(r(600, 50, 8, 900)));   // vertical sidebar resizer
+  assert.ok(isSliver(r(0, 300, 800, 2)));    // horizontal rule
+  assert.ok(!isSliver(r(0, 0, 40, 40)));     // icon button
+  assert.ok(!isSliver(r(0, 0, 400, 40)));    // channel row
+  assert.ok(!isSliver(r(0, 0, 10, 10)));     // small square badge
 });

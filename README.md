@@ -35,6 +35,7 @@ Two layers of CSS overrides are applied on top of Discord:
 | Preset | Hides | Default |
 |---|---|---|
 | `nitroUpsells` | Nitro and Shop links and upsell banners | on |
+| `quests` | Quests link in the direct messages list | on |
 | `downloadApps` | "Download Apps" button in the server list | on |
 | `giftButton` | Gift button in the message box | on |
 | `helpButton` | Help (?) button in the header | on |

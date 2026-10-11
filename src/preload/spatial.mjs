@@ -87,3 +87,11 @@ export function sameBox(outer, inner, tolerance = 4) {
     && Math.abs(outer.right - inner.right) <= tolerance
     && Math.abs(outer.bottom - inner.bottom) <= tolerance;
 }
+
+// Thin strips (dividers, scrollbar-like handles) that a focus ring would
+// render as a line rather than a control.
+export function isSliver(rect, thickness = 12, ratio = 4) {
+  const w = rect.right - rect.left;
+  const h = rect.bottom - rect.top;
+  return (w < thickness && h > w * ratio) || (h < thickness && w > h * ratio);
+}
