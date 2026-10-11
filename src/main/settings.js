@@ -19,6 +19,8 @@ const DEFAULTS = Object.freeze({
   rumbleOnCall: true,
   // Hide the mouse cursor while the controller is being used.
   hideCursor: true,
+  // TV-friendly restyle of Discord (docs/design/couch).
+  couchUi: true,
   stickDeadzone: 0.5,
   // Built-in CSS presets that hide Discord elements (see css-overrides.js).
   hide: Object.freeze(defaultHide()),
@@ -50,6 +52,7 @@ function normalize(raw) {
   if (typeof raw.fullscreen === 'boolean') out.fullscreen = raw.fullscreen;
   if (typeof raw.rumbleOnCall === 'boolean') out.rumbleOnCall = raw.rumbleOnCall;
   if (typeof raw.hideCursor === 'boolean') out.hideCursor = raw.hideCursor;
+  if (typeof raw.couchUi === 'boolean') out.couchUi = raw.couchUi;
   if (Number.isFinite(raw.zoomFactor)) out.zoomFactor = clamp(raw.zoomFactor, 0.5, 3);
   if (Number.isFinite(raw.stickDeadzone)) out.stickDeadzone = clamp(raw.stickDeadzone, 0.1, 0.9);
 

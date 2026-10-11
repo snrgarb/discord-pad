@@ -28,6 +28,12 @@ export function buildRows(schema) {
       change: (s) => ({ fullscreen: !s.fullscreen }),
     },
     {
+      id: 'couchUi',
+      label: 'Couch UI (TV theme and larger rows)',
+      value: (s) => onOff(s.couchUi),
+      change: (s) => ({ couchUi: !s.couchUi }),
+    },
+    {
       id: 'zoom',
       label: 'Zoom',
       value: (s) => `${Math.round(s.zoomFactor * 100)}%`,

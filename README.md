@@ -27,6 +27,10 @@ Landing on any text field (message box, search, quick switcher) shows a hint; pr
 
 Hold View and press Y for the settings menu: full screen, zoom, cursor hiding, call rumble, which Discord elements to hide, and what every button does. Changes apply immediately and are saved to `%APPDATA%\Discord Pad\settings.json`, which you can still edit by hand.
 
+## Couch UI
+
+On by default (toggle it in the settings menu). It keeps Discord's own colours and widens the server rail (88px, icons kept centred) and channel/DM list (340px), makes channel and DM rows 56px tall, enlarges chat text and the message box, and shows the open channel as a filled row with an accent bar so it never looks like the controller focus ring. It restyles Discord's own elements, found by `src/preload/adapter.mjs` and marked with `data-dp-*` attributes that `src/main/couch.css` styles; nothing is moved or replaced. Your `custom.css` loads after it, so you can override any of it. Design: [docs/design/couch](docs/design/couch/design.md).
+
 ## Hiding Discord elements
 
 Two layers of CSS overrides are applied on top of Discord:

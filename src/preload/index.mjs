@@ -12,6 +12,7 @@ import { TEXT_INPUT, VOICE_CHANNEL_LABEL } from './selectors.mjs';
 
 import { BUTTON_NAMES, ACTION_NAMES } from './labels.mjs';
 import { SettingsMenu } from './settings-menu.mjs';
+import { CouchAdapter } from './adapter.mjs';
 
 const chord = (name) => ipcRenderer.send('pad:chord', name);
 const typeText = (text) => ipcRenderer.send('pad:text', text);
@@ -23,8 +24,15 @@ async function main() {
 
   const overlay = createOverlay();
   // Landing on a text field shows how to type into it.
+  const adapter = new CouchAdapter();
+  const applyTheme = () => {
+    adapter.setEnabled(settings.couchUi);
+  };
+  applyTheme();
+
   const focus = new FocusManager(overlay, {
     onLand: (el) => {
+      adapter.setFocus(el);
       if (textFieldOf(el)) overlay.toast('Press A to open the keyboard', { ms: 1600 });
     },
   });
@@ -49,6 +57,7 @@ async function main() {
     if (!next) return;
     settings = next;
     renderHelp();
+    applyTheme();
   };
   const menu = new SettingsMenu(overlay.settings, {
     schema,

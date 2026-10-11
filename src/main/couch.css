@@ -1,0 +1,93 @@
+/*
+ * Couch UI: TV-friendly restyle of Discord (design: docs/design/couch).
+ *
+ * Only styles elements the preload adapter (src/preload/adapter.mjs) has
+ * marked with data-dp-* attributes, plus Discord's own theme variables, so
+ * Discord's layout, modals and side panels keep working. Never change the
+ * display/position of Discord's app root here.
+ */
+
+/* Colours stay Discord's own; Couch UI only changes size and spacing. */
+html[data-dp-root="true"] {
+  --dp-radius: 12px;
+}
+
+/* Columns: wider server rail and channel list (sizes from the design). */
+[data-dp-region="servers"] {
+  width: 88px !important;
+  min-width: 88px !important;
+  flex: 0 0 88px !important;
+  box-sizing: border-box !important;
+  /* Discord's server list is laid out for 72px; the adapter measures how far
+     the icons sit off-centre in the wider rail and sets this to recentre them. */
+  padding-left: var(--dp-rail-shift, 8px) !important;
+}
+[data-dp-region="channels"] {
+  width: 340px !important;
+  min-width: 340px !important;
+  flex: 0 0 340px !important;
+}
+[data-dp-region="main"] {
+  min-width: 0;
+}
+
+/* Bigger targets in the channel and DM lists. */
+[data-dp-role="channel"],
+[data-dp-role="dm"] {
+  box-sizing: border-box;
+  min-height: 56px !important;
+  border-radius: var(--dp-radius) !important;
+  font-size: 18px !important;
+  scroll-margin-block: 80px;
+  display: flex !important;
+  align-items: center !important;
+}
+/* Keep the row's own content full width inside the centred row. */
+[data-dp-role="channel"] > *,
+[data-dp-role="dm"] > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+[data-dp-role="server"] {
+  scroll-margin-block: 65px;
+}
+
+/* Selected (open) is a filled row with an accent bar; focused (where A
+   goes) is the controller ring, so the two never look the same. */
+[data-dp-role="channel"][data-dp-selected="true"],
+[data-dp-role="dm"][data-dp-selected="true"] {
+  background-color: var(--background-modifier-selected, rgba(78, 80, 88, 0.6)) !important;
+  box-shadow: inset 4px 0 0 var(--brand-500, #5865f2);
+  color: var(--interactive-active) !important;
+}
+
+/* The overlay ring is the canonical focus indicator; this hover tint marks
+   the focused element as well in case the ring is hidden behind a layer. */
+[data-dp-focus="true"] {
+  background-color: var(--background-modifier-hover, rgba(78, 80, 88, 0.3)) !important;
+}
+
+/* Readable chat. */
+[data-dp-role="message"] {
+  line-height: 1.5 !important;
+}
+[data-dp-role="message"] [id^="message-content-"] {
+  font-size: 1.125rem !important;
+}
+[data-dp-role="composer"] {
+  min-height: 62px !important;
+  border-radius: 13px !important;
+  font-size: 1.125rem !important;
+}
+
+/* Only hide what the adapter positively identified as non-essential. */
+html[data-dp-mode="couch"] [data-dp-role="secondary"] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dp-root="true"] * {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+  }
+}

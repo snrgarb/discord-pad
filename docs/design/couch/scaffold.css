@@ -1,0 +1,78 @@
+/**
+ * Discord Pad — Couch UI experimental CSS patch scaffold
+ *
+ * IMPORTANT: These data-dp-* attributes are proposed adapter markers, not
+ * existing Discord selectors. Add them from preload/selectors.mjs after
+ * resolving actual Discord regions and elements against a real build.
+ * Keep existing hide presets; this file only styles discovered UI.
+ *
+ * Attach data-dp-root="true" to a suitable ancestor, e.g. body.
+ * Attach data-dp-region="servers|channels|main" to existing DOM regions.
+ * Attach data-dp-role="server|channel|dm|message|composer|secondary"
+ * to selected existing descendants where safely identified.
+ * Apply data-dp-focus="true" to the actual controller-focused element.
+ */
+[data-dp-root="true"] {
+  --dp-bg: #111824;
+  --dp-panel: #182231;
+  --dp-selected: #273651;
+  --dp-focus: #a1adff;
+  --dp-text: #f0f4ff;
+  --dp-muted: #a2afc7;
+  --dp-radius: 12px;
+}
+/* Preserve Discord's own flex/grid structure. Avoid overriding app root display. */
+[data-dp-root="true"] [data-dp-region="servers"] {
+  flex: 0 0 88px;
+  width: 88px;
+  min-width: 88px;
+  background: var(--dp-bg);
+}
+[data-dp-root="true"] [data-dp-region="channels"] {
+  flex: 0 0 340px;
+  width: 340px;
+  min-width: 340px;
+  background: var(--dp-panel);
+}
+[data-dp-root="true"] [data-dp-region="main"] {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+/* Larger actionable targets without changing DOM or synthesising navigation. */
+[data-dp-root="true"] [data-dp-role="channel"],
+[data-dp-root="true"] [data-dp-role="dm"] {
+  box-sizing: border-box;
+  min-height: 56px;
+  border-radius: var(--dp-radius);
+  scroll-margin-block: 80px;
+}
+[data-dp-root="true"] [data-dp-role="server"] {
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 17px;
+  scroll-margin-block: 65px;
+}
+/* The existing focus ring should stay canonical. This is a visual fallback. */
+[data-dp-root="true"] [data-dp-focus="true"] {
+  outline: 3px solid var(--dp-focus) !important;
+  outline-offset: -3px;
+  background-color: var(--dp-selected);
+}
+[data-dp-root="true"] [data-dp-role="message"] {
+  line-height: 1.5;
+}
+[data-dp-root="true"] [data-dp-role="composer"] {
+  min-height: 62px;
+  border-radius: 13px;
+}
+/* Only hide nonessential elements that the adapter positively identifies. */
+[data-dp-root="true"][data-dp-mode="couch"] [data-dp-role="secondary"] {
+  display: none !important;
+}
+/* Modal and call layers must trump cosmetic hiding / normal columns. */
+[data-dp-root="true"][data-dp-mode="ringing"] [data-dp-role="incoming-call"] {
+  visibility: visible !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-dp-root="true"] * { scroll-behavior: auto !important; }
+}

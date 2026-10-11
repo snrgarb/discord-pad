@@ -121,7 +121,7 @@ function createWindow() {
 
   cssOverrides = new CssOverrides(wc, {
     userDataDir: app.getPath('userData'),
-    getHide: () => settings.hide,
+    getSettings: () => settings,
   });
   cssOverrides.start();
 
@@ -162,7 +162,9 @@ function applySettings(next) {
   if (!mainWindow) return;
   if (prev.zoomFactor !== next.zoomFactor) mainWindow.webContents.setZoomFactor(next.zoomFactor);
   if (mainWindow.isFullScreen() !== next.fullscreen) mainWindow.setFullScreen(next.fullscreen);
-  if (JSON.stringify(prev.hide) !== JSON.stringify(next.hide)) cssOverrides?.apply();
+  if (JSON.stringify(prev.hide) !== JSON.stringify(next.hide) || prev.couchUi !== next.couchUi) {
+    cssOverrides?.apply();
+  }
 }
 
 function registerIpc() {
