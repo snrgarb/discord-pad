@@ -5,7 +5,7 @@ const {
   app, BrowserWindow, ipcMain, session, shell, desktopCapturer, powerSaveBlocker,
 } = require('electron');
 const settingsStore = require('./settings');
-const { CssOverrides } = require('./css-overrides');
+const { CssOverrides, PRESETS } = require('./css-overrides');
 const { resolveChord, sanitizeText, chordEvents } = require('./keys');
 const { isDiscordUrl, chromeUserAgent } = require('./origins');
 
@@ -22,6 +22,7 @@ const ALLOWED_PERMISSIONS = new Set([
 let mainWindow = null;
 let settings = null;
 let callBlockerId = null;
+let cssOverrides = null;
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -118,10 +119,11 @@ function createWindow() {
     }
   });
 
-  new CssOverrides(wc, {
+  cssOverrides = new CssOverrides(wc, {
     userDataDir: app.getPath('userData'),
     getHide: () => settings.hide,
-  }).start();
+  });
+  cssOverrides.start();
 
   wc.loadURL(START_URL);
 }
@@ -152,7 +154,37 @@ function fromApp(event) {
   );
 }
 
+// Apply a validated settings object, save it, and push visible changes.
+function applySettings(next) {
+  const prev = settings;
+  settings = next;
+  settingsStore.save(app.getPath('userData'), settings);
+  if (!mainWindow) return;
+  if (prev.zoomFactor !== next.zoomFactor) mainWindow.webContents.setZoomFactor(next.zoomFactor);
+  if (mainWindow.isFullScreen() !== next.fullscreen) mainWindow.setFullScreen(next.fullscreen);
+  if (JSON.stringify(prev.hide) !== JSON.stringify(next.hide)) cssOverrides?.apply();
+}
+
 function registerIpc() {
+  ipcMain.handle('pad:settings-schema', (event) => (fromApp(event) ? {
+    presets: Object.entries(PRESETS).map(([id, p]) => ({ id, label: p.label })),
+    actions: settingsStore.ACTIONS,
+  } : null));
+
+  // Patches come from the page, so they go through the same validation as
+  // settings.json.
+  ipcMain.handle('pad:update-settings', (event, patch) => {
+    if (!fromApp(event) || !patch || typeof patch !== 'object') return null;
+    applySettings(settingsStore.normalize({ ...settings, ...patch }));
+    return settings;
+  });
+
+  ipcMain.handle('pad:reset-settings', (event) => {
+    if (!fromApp(event)) return null;
+    applySettings(settingsStore.normalize(null));
+    return settings;
+  });
+
   ipcMain.handle('pad:get-settings', (event) => (fromApp(event) ? settings : null));
 
   ipcMain.on('pad:chord', (event, name) => {
