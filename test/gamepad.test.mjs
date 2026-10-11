@@ -75,3 +75,20 @@ test('stickDirection picks the dominant axis', () => {
   assert.equal(stickDirection(-0.8, 0.3, 0.5), 'left');
   assert.equal(stickDirection(0.2, 0.2, 0.5), null);
 });
+
+test('resync swallows buttons already held when focus returns', () => {
+  const g = new GamepadReader();
+  g.resync(snap([BUTTON.A, BUTTON.DOWN]));
+  // Still held: nothing fires, no auto-repeat.
+  assert.deepEqual(g.update(snap([BUTTON.A, BUTTON.DOWN]), 0).events, []);
+  assert.deepEqual(g.update(snap([BUTTON.A, BUTTON.DOWN]), 5000).events, []);
+  // A fresh press after release works normally.
+  g.update(snap(), 5016);
+  assert.deepEqual(g.update(snap([BUTTON.A]), 5032).events, [{ type: 'press', button: BUTTON.A }]);
+});
+
+test('resync while View is held does not open help on release', () => {
+  const g = new GamepadReader();
+  g.resync(snap([BUTTON.VIEW]));
+  assert.deepEqual(g.update(snap(), 16).events, []);
+});

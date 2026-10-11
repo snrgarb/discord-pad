@@ -50,6 +50,17 @@ export class GamepadReader {
     this.comboUsed = new Set();
   }
 
+  // Adopt the current state without emitting anything, e.g. when the window
+  // regains focus: buttons already held (like the one that switched back to
+  // the app) must not fire, and neither must their release.
+  resync({ buttons, axes }) {
+    this.prev = buttons.slice();
+    this.comboUsed = new Set([...this.holdButtons].filter((b) => buttons[b]));
+    const dpadDir = Object.entries(DPAD).find(([i]) => buttons[i]);
+    this.dir = dpadDir ? dpadDir[1] : stickDirection(axes[0] || 0, axes[1] || 0, this.deadzone);
+    this.nextRepeat = Infinity;
+  }
+
   // Returns {events, scroll}. events: {type:'press', button} | {type:'move', dir} | {type:'combo', buttons:[a,b]}
   update({ buttons, axes }, now) {
     const events = [];

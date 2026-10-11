@@ -197,9 +197,30 @@ async function main() {
     if (scroll && !osk.visible && !menu.visible) scrollFrom(focus.current, scroll.y * 28, scroll.x * 28);
   };
 
+  // Chromium keeps reporting gamepads while the window is in the background,
+  // so only act on input while Discord Pad is the focused window. The main
+  // process reports focus changes; DOM focus events back it up.
+  let windowFocused = document.hasFocus();
+  let needResync = true;
+  const setFocused = (focused) => {
+    if (focused && !windowFocused) needResync = true;
+    windowFocused = focused;
+  };
+  ipcRenderer.on('pad:window-focus', (_event, focused) => setFocused(Boolean(focused)));
+  addEventListener('focus', () => setFocused(true));
+  addEventListener('blur', () => setFocused(false));
+
   const loop = (now) => {
     lastPads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
-    if (lastPads.some(Boolean)) handle(reader.update(mergePads(lastPads), now));
+    if (windowFocused && lastPads.some(Boolean)) {
+      const state = mergePads(lastPads);
+      if (needResync) {
+        reader.resync(state);
+        needResync = false;
+      } else {
+        handle(reader.update(state, now));
+      }
+    }
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
