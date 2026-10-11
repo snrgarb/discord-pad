@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fake Discord</title>
+<style>
+  body { margin: 0; font: 16px sans-serif; background: #313338; color: #fff; display: flex; height: 100vh; }
+  #servers { width: 72px; display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+  #servers [role=treeitem] { width: 48px; height: 48px; border-radius: 50%; background: #5865f2; }
+  #channels { width: 240px; display: flex; flex-direction: column; gap: 4px; padding: 8px; }
+  #channels a { display: block; padding: 6px; color: #ccc; }
+  #chat { flex: 1; display: flex; flex-direction: column; padding: 8px; }
+  #messages { flex: 1; overflow-y: auto; }
+  #messages div { height: 60px; }
+  #input { border: 1px solid #888; min-height: 40px; padding: 8px; }
+  #panel { position: fixed; left: 0; bottom: 0; width: 320px; display: flex; gap: 8px; padding: 8px; }
+  [role=dialog] { position: fixed; top: 100px; left: 30%; width: 40%; background: #222; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+  button { min-width: 40px; min-height: 30px; }
+</style>
+</head>
+<body>
+  <nav id="servers">
+    <div role="treeitem" aria-label="Server One" tabindex="-1"></div>
+    <div role="treeitem" aria-label="Server Two" tabindex="-1"></div>
+  </nav>
+  <nav id="channels">
+    <a href="#general" aria-label="general (text channel)" onclick="log('click:general');return false">general</a>
+    <a href="#lounge" aria-label="Lounge (voice channel)" onclick="joinVoice();return false">Lounge</a>
+  </nav>
+  <main id="chat">
+    <div id="messages"></div>
+    <div id="input" contenteditable="true" role="textbox" aria-label="Message #general"></div>
+  </main>
+  <div id="panel">
+    <button role="switch" aria-label="Mute" aria-checked="false">mic</button>
+    <button role="switch" aria-label="Deafen" aria-checked="false">deaf</button>
+  </div>
+<script>
+  window.events = [];
+  function log(e) { window.events.push(e); }
+  const msgs = document.getElementById('messages');
+  for (let i = 0; i < 40; i++) { const d = document.createElement('div'); d.textContent = 'message ' + i; msgs.appendChild(d); }
+
+  function joinVoice() {
+    log('join:lounge');
+    if (document.querySelector('[aria-label=Disconnect]')) return;
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Disconnect');
+    b.textContent = 'x';
+    b.onclick = () => { log('disconnect'); b.remove(); };
+    document.getElementById('panel').appendChild(b);
+  }
+
+  window.ring = () => {
+    const d = document.createElement('div');
+    d.setAttribute('role', 'dialog');
+    d.id = 'call';
+    d.innerHTML = '<span>Incoming Call from Friend</span><button aria-label="Decline">no</button><button aria-label="Join Call">yes</button>';
+    d.querySelector('[aria-label="Join Call"]').onclick = () => { log('accept'); d.remove(); joinVoice(); };
+    d.querySelector('[aria-label=Decline]').onclick = () => { log('decline'); d.remove(); };
+    document.body.appendChild(d);
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (!e.isTrusted) return;
+    const combo = (e.ctrlKey ? 'Ctrl+' : '') + (e.altKey ? 'Alt+' : '') + (e.shiftKey ? 'Shift+' : '') + e.key;
+    log('key:' + combo);
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'm') {
+      const m = document.querySelector('[aria-label=Mute]');
+      m.setAttribute('aria-checked', String(m.getAttribute('aria-checked') !== 'true'));
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+      const d = document.createElement('div');
+      d.setAttribute('role', 'dialog');
+      d.id = 'switcher';
+      d.innerHTML = '<input aria-label="Where would you like to go?"><button>Result A</button><button>Result B</button>';
+      document.body.appendChild(d);
+    }
+    if (e.key === 'Escape') document.getElementById('switcher')?.remove();
+  });
+</script>
+</body>
+</html>
