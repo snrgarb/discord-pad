@@ -23,6 +23,31 @@ export const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+// Matched by FOCUSABLE but never worth landing on: sidebar resize handles
+// and dividers (Discord gives the sidebar resizer a tabindex).
+export const NOT_NAVIGABLE = [
+  '[role="separator"]',
+  '[aria-label*="resize" i]',
+  '[class*="resizeHandle"]',
+  '[class*="sash"]',
+].join(',');
+
+// The three navigation columns: server list, channel/DM sidebar, and main
+// content. Column edges are measured from these; if the sidebar can't be
+// found, Discord's default 240px sidebar width is assumed.
+export const SERVER_COLUMN = 'nav[aria-label="Servers sidebar"], [data-list-id="guildsnav"]';
+export const CHANNEL_COLUMN = [
+  'nav[aria-label="Private channels"]',
+  'nav[aria-label$="(server)"]',
+  '[data-list-id="private-channels"]',
+  '#channels',
+  'section[aria-label="User area"]',
+].join(',');
+export const DEFAULT_SIDEBAR_WIDTH = 240;
+
+// Marks the item Discord considers current (open channel, selected server).
+export const SELECTED = '[aria-selected="true"], [aria-current="page"], [aria-current="true"]';
+
 // Topmost layer that should capture navigation (modals, menus, popouts).
 export const LAYERS = '[role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"]';
 

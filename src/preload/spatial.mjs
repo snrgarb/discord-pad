@@ -87,3 +87,33 @@ export function sameBox(outer, inner, tolerance = 4) {
     && Math.abs(outer.right - inner.right) <= tolerance
     && Math.abs(outer.bottom - inner.bottom) <= tolerance;
 }
+
+// Thin strips (dividers, scrollbar-like handles) that a focus ring would
+// render as a line rather than a control.
+export function isSliver(rect, thickness = 12, ratio = 4) {
+  const w = rect.right - rect.left;
+  const h = rect.bottom - rect.top;
+  return (w < thickness && h > w * ratio) || (h < thickness && w > h * ratio);
+}
+
+// Column navigation. Columns: 0 = servers, 1 = channels/DMs, 2 = main.
+export const COLUMNS = 3;
+
+export function columnForX(x, { serversRight, sidebarRight }) {
+  if (x <= serversRight) return 0;
+  if (x <= sidebarRight) return 1;
+  return 2;
+}
+
+// How a D-pad press should move from a given column:
+//   within: try to move to another element in the same column first
+//   jumpTo: column to jump to (if `within` found nothing, or straight away)
+// Up/down stay in the column. In the server and channel columns left/right
+// always jump a whole column; in the main area they move between controls
+// and only jump back to the sidebar at the left edge.
+export function planMove(column, dir) {
+  if (dir === 'up' || dir === 'down') return { within: true, jumpTo: null };
+  if (column === 2) return { within: true, jumpTo: dir === 'left' ? 1 : null };
+  const target = column + (dir === 'right' ? 1 : -1);
+  return { within: false, jumpTo: target >= 0 && target < COLUMNS ? target : null };
+}

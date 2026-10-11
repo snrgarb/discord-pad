@@ -1,5 +1,10 @@
-import { pickNext, nearestTo, sameBox } from './spatial.mjs';
-import { FOCUSABLE, LAYERS } from './selectors.mjs';
+import {
+  pickNext, nearestTo, sameBox, isSliver, columnForX, planMove,
+} from './spatial.mjs';
+import {
+  FOCUSABLE, LAYERS, NOT_NAVIGABLE, TEXT_INPUT,
+  SERVER_COLUMN, CHANNEL_COLUMN, DEFAULT_SIDEBAR_WIDTH, SELECTED,
+} from './selectors.mjs';
 
 const MIN_SIZE = 4;
 
@@ -30,21 +35,57 @@ export function currentScope() {
 export function collectCandidates(scope = currentScope()) {
   const items = [];
   for (const el of scope.querySelectorAll(FOCUSABLE)) {
-    if (el.matches('[disabled], [aria-disabled="true"]')) continue;
+    if (el.matches('[disabled], [aria-disabled="true"]') || el.matches(NOT_NAVIGABLE)) continue;
     const rect = el.getBoundingClientRect();
+    if (isSliver(rect)) continue;
     if (!isVisible(el, rect)) continue;
     items.push({ el, rect });
   }
-  return items.filter((item) => !items.some((other) => (
-    other !== item && other.el.contains(item.el) && sameBox(other.rect, item.rect)
-  )));
+  // Collapse wrappers: a nested element covering the same box, or the only
+  // control inside another (e.g. a search box wrapping its <input>), would
+  // otherwise need two presses to get past.
+  const inside = (outer) => items.filter((i) => i !== outer && outer.el.contains(i.el));
+  return items.filter((item) => !items.some((other) => {
+    if (other === item || !other.el.contains(item.el)) return false;
+    return sameBox(other.rect, item.rect) || inside(other).length === 1;
+  }));
 }
 
+// The text field an element is, or wraps (Discord often wraps inputs).
+export function textFieldOf(el) {
+  if (!el) return null;
+  if (el.matches(TEXT_INPUT)) return el;
+  return [...el.querySelectorAll(TEXT_INPUT)].find((f) => f.getBoundingClientRect().width > 0) || null;
+}
+
+// Column edges for the main Discord layout, or null when it isn't showing
+// (settings pages, full-screen views), in which case plain spatial
+// navigation is used.
+export function measureColumns() {
+  const servers = [...document.querySelectorAll(SERVER_COLUMN)]
+    .find((el) => isVisible(el, el.getBoundingClientRect()));
+  if (!servers) return null;
+  const serversRight = servers.getBoundingClientRect().right;
+  const sidebarRights = [...document.querySelectorAll(CHANNEL_COLUMN)]
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.left >= serversRight - 1)
+    .map((r) => r.right);
+  const sidebarRight = sidebarRights.length
+    ? Math.max(...sidebarRights)
+    : serversRight + DEFAULT_SIDEBAR_WIDTH;
+  return { serversRight, sidebarRight };
+}
+
+const centerX = (rect) => (rect.left + rect.right) / 2;
+
 export class FocusManager {
-  constructor(overlay) {
+  constructor(overlay, { onLand } = {}) {
     this.overlay = overlay;
+    this.onLand = onLand;
     this.current = null;
     this.active = false;
+    // Last element visited in each column, to return to on a column jump.
+    this.lastInColumn = new Map();
     const tick = () => {
       this.drawRing();
       requestAnimationFrame(tick);
@@ -74,14 +115,63 @@ export class FocusManager {
     const before = this.current;
     const from = this.ensure();
     if (!from || from !== before) return; // first press just shows where focus is
-    const candidates = collectCandidates().filter((c) => c.el !== from && !c.el.contains(from));
-    const idx = pickNext(from.getBoundingClientRect(), candidates.map((c) => c.rect), dir);
-    if (idx >= 0) {
-      this.set(candidates[idx].el);
-    } else {
-      // Nothing visible that way: let a scroll container reveal more.
-      scrollFrom(from, dir === 'up' || dir === 'down' ? (dir === 'up' ? -1 : 1) * 200 : 0);
+    const scope = currentScope();
+    const candidates = collectCandidates(scope).filter((c) => c.el !== from && !c.el.contains(from));
+    const fromRect = from.getBoundingClientRect();
+    const columns = scope === document.body ? measureColumns() : null;
+
+    if (!columns) {
+      const idx = pickNext(fromRect, candidates.map((c) => c.rect), dir);
+      if (idx >= 0) this.set(candidates[idx].el);
+      else scrollFrom(from, verticalScroll(dir));
+      return;
     }
+
+    const column = columnForX(centerX(fromRect), columns);
+    this.lastInColumn.set(column, from);
+    const plan = planMove(column, dir);
+    if (plan.within) {
+      const horizontal = dir === 'left' || dir === 'right';
+      // Sideways moves in the main area stay on the same row; past the
+      // row's end, left jumps back to the sidebar.
+      const same = candidates.filter((c) => columnForX(centerX(c.rect), columns) === column
+        && (!horizontal || (c.rect.top < fromRect.bottom && c.rect.bottom > fromRect.top)));
+      const idx = pickNext(fromRect, same.map((c) => c.rect), dir);
+      if (idx >= 0) {
+        this.set(same[idx].el);
+        return;
+      }
+    }
+    if (plan.jumpTo !== null) {
+      const target = this.columnTarget(plan.jumpTo, candidates, columns, fromRect);
+      if (target) {
+        this.set(target);
+        return;
+      }
+    }
+    if (plan.within) scrollFrom(from, verticalScroll(dir));
+  }
+
+  // Where to land when jumping into a column: where you last were in it,
+  // else the item Discord marks as selected, else the row level with you.
+  columnTarget(column, candidates, columns, fromRect) {
+    const inColumn = candidates.filter((c) => columnForX(centerX(c.rect), columns) === column);
+    if (!inColumn.length) return null;
+    const last = this.lastInColumn.get(column);
+    if (last && inColumn.some((c) => c.el === last)) return last;
+    const selected = inColumn.find((c) => c.el.matches(SELECTED) || c.el.closest(SELECTED));
+    if (selected) return selected.el;
+    const y = (fromRect.top + fromRect.bottom) / 2;
+    const idx = nearestTo({ x: centerX(inColumn[0].rect), y }, inColumn.map((c) => c.rect));
+    return inColumn[idx].el;
+  }
+
+  // Adopt an element Discord focused itself (e.g. the search box of a
+  // dialog that just opened) so the ring follows it.
+  adopt(el) {
+    if (el === this.current) return;
+    this.current = el;
+    this.onLand?.(el);
   }
 
   set(el) {
@@ -89,6 +179,7 @@ export class FocusManager {
     if (!el) return;
     el.focus({ preventScroll: true });
     el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    this.onLand?.(el);
   }
 
   drawRing() {
@@ -102,6 +193,12 @@ export class FocusManager {
   hide() {
     this.active = false;
   }
+}
+
+function verticalScroll(dir) {
+  if (dir === 'up') return -200;
+  if (dir === 'down') return 200;
+  return 0;
 }
 
 function scrollableAncestor(el) {
