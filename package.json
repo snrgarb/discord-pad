@@ -1,0 +1,50 @@
+{
+  "name": "discord-pad",
+  "productName": "Discord Pad",
+  "version": "0.1.0",
+  "description": "Controller-friendly Discord wrapper for TV / HTPC use",
+  "main": "src/main/main.js",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build:preload": "esbuild src/preload/index.mjs --external:electron --bundle --platform=browser --format=iife --target=chrome130 --outfile=dist/preload.js",
+    "build": "npm run build:preload",
+    "start": "npm run build && electron .",
+    "test": "node --test \"test/**/*.test.*\"",
+    "dist": "npm run build && electron-builder --win --x64",
+    "dist:dir": "npm run build && electron-builder --dir",
+    "smoke": "npm run build && node test/smoke/run.js"
+  },
+  "devDependencies": {
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2"
+  },
+  "build": {
+    "appId": "com.discordpad.app",
+    "productName": "Discord Pad",
+    "files": [
+      "src/main/**",
+      "dist/**",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    }
+  }
+}
