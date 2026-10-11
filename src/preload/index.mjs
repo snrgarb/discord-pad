@@ -10,31 +10,16 @@ import {
 } from './calls.mjs';
 import { TEXT_INPUT, VOICE_CHANNEL_LABEL } from './selectors.mjs';
 
-const BUTTON_NAMES = {
-  0: 'A', 1: 'B', 2: 'X', 3: 'Y', 4: 'LB', 5: 'RB', 6: 'LT', 7: 'RT',
-  8: 'View', 9: 'Menu', 10: 'Left stick click', 11: 'Right stick click',
-};
-const ACTION_NAMES = {
-  activate: 'Select (opens keyboard on text boxes)',
-  back: 'Back / close',
-  toggleMute: 'Mute / unmute',
-  toggleDeafen: 'Deafen / undeafen',
-  prevServer: 'Previous server',
-  nextServer: 'Next server',
-  prevChannel: 'Previous channel',
-  nextChannel: 'Next channel',
-  answerCall: 'Answer call / join focused voice channel',
-  hangUp: 'Hang up / leave voice',
-  quickSwitcher: 'Jump to server, channel or DM',
-  toggleHelp: 'Show this help',
-};
+import { BUTTON_NAMES, ACTION_NAMES } from './labels.mjs';
+import { SettingsMenu } from './settings-menu.mjs';
 
 const chord = (name) => ipcRenderer.send('pad:chord', name);
 const typeText = (text) => ipcRenderer.send('pad:text', text);
 
 async function main() {
-  const settings = await ipcRenderer.invoke('pad:get-settings');
+  let settings = await ipcRenderer.invoke('pad:get-settings');
   if (!settings) return;
+  const schema = await ipcRenderer.invoke('pad:settings-schema');
 
   const overlay = createOverlay();
   // Landing on a text field shows how to type into it.
@@ -50,13 +35,29 @@ async function main() {
   });
   const reader = new GamepadReader({ deadzone: settings.stickDeadzone });
 
-  overlay.setHelp([
-    ['D-pad / left stick', 'Move'],
+  const renderHelp = () => overlay.setHelp([
+    ['D-pad / left stick', 'Move (left/right jump between columns)'],
     ['Right stick', 'Scroll'],
     ...Object.entries(settings.mapping)
       .filter(([, action]) => action !== 'none')
       .map(([btn, action]) => [BUTTON_NAMES[btn] || `Button ${btn}`, ACTION_NAMES[action] || action]),
+    ['View + Y', 'Settings'],
   ]);
+  renderHelp();
+
+  const applyLocal = (next) => {
+    if (!next) return;
+    settings = next;
+    renderHelp();
+  };
+  const menu = new SettingsMenu(overlay.settings, {
+    schema,
+    getSettings: () => settings,
+    update: async (patch) => applyLocal(await ipcRenderer.invoke('pad:update-settings', patch)),
+    reset: async () => applyLocal(await ipcRenderer.invoke('pad:reset-settings')),
+    onClose: () => focus.ensure(),
+    toast: (text) => overlay.toast(text),
+  });
 
   // Cursor hides while the controller is in use and returns with the mouse.
   const cursorStyle = document.createElement('style');
@@ -170,12 +171,21 @@ async function main() {
       if (ev.type === 'combo') {
         if (ev.buttons.includes(BUTTON.VIEW) && ev.buttons.includes(BUTTON.MENU)) {
           ipcRenderer.send('pad:toggle-fullscreen');
+        } else if (ev.buttons.includes(BUTTON.VIEW) && ev.buttons.includes(BUTTON.Y)) {
+          osk.close();
+          overlay.toggleHelp(false);
+          if (menu.visible) menu.close();
+          else menu.open();
         }
       } else if (ev.type === 'move') {
-        if (osk.visible) osk.move(ev.dir);
+        if (menu.visible) menu.move(ev.dir);
+        else if (osk.visible) osk.move(ev.dir);
         else if (!overlay.helpVisible()) focus.move(ev.dir);
       } else if (ev.type === 'press') {
-        if (osk.visible) {
+        if (menu.visible) {
+          if (ev.button === BUTTON.A) menu.press();
+          else if (ev.button === BUTTON.B) menu.close();
+        } else if (osk.visible) {
           oskButtons[ev.button]?.();
         } else if (overlay.helpVisible() && ev.button !== BUTTON.VIEW && ev.button !== BUTTON.B) {
           overlay.toggleHelp(false);
@@ -184,7 +194,7 @@ async function main() {
         }
       }
     }
-    if (scroll && !osk.visible) scrollFrom(focus.current, scroll.y * 28, scroll.x * 28);
+    if (scroll && !osk.visible && !menu.visible) scrollFrom(focus.current, scroll.y * 28, scroll.x * 28);
   };
 
   const loop = (now) => {

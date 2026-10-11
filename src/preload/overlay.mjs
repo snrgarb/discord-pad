@@ -31,6 +31,21 @@ const CSS = `
 .help td { padding: 6px 12px; border-bottom: 1px solid #3f4147; }
 .help td:first-child { color: #00e5ff; font-weight: 700; white-space: nowrap; }
 .help p { margin: 16px 0 0; color: #b5bac1; font-size: 16px; }
+.settings {
+  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.65); z-index: 2147483647; pointer-events: auto;
+  font: 500 20px/1.4 "gg sans", "Segoe UI", sans-serif; color: #f2f3f5;
+}
+.settings.show { display: flex; }
+.settings .sheet { background: #2b2d31; border-radius: 16px; padding: 24px 32px; width: min(900px, 92vw); max-height: 86vh; display: flex; flex-direction: column; }
+.settings h2 { margin: 0 0 12px; font-size: 28px; }
+.settings h3 { margin: 18px 0 6px; font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: #b5bac1; }
+.settings hr { border: 0; border-top: 1px solid #3f4147; margin: 14px 0; }
+.settings .rows { overflow-y: auto; padding-right: 8px; }
+.settings .row { display: flex; justify-content: space-between; gap: 24px; padding: 10px 14px; border-radius: 10px; }
+.settings .row.sel { background: #00e5ff; color: #111; }
+.settings .val { font-weight: 700; white-space: nowrap; }
+.settings .hint { color: #949ba4; font-size: 15px; margin-top: 12px; text-align: center; }
 .osk {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
   width: min(1100px, 96vw); background: #1e1f22; border-radius: 16px; padding: 14px;
@@ -58,7 +73,8 @@ export function createOverlay() {
     <div class="ring"></div>
     <div class="toast"></div>
     <div class="panel"><div class="help"></div></div>
-    <div class="osk"></div>`;
+    <div class="osk"></div>
+    <div class="settings"></div>`;
   const mount = () => {
     if (!host.isConnected) document.documentElement.appendChild(host);
   };
@@ -71,10 +87,12 @@ export function createOverlay() {
   const panel = root.querySelector('.panel');
   const help = root.querySelector('.help');
   const osk = root.querySelector('.osk');
+  const settings = root.querySelector('.settings');
   let toastTimer = null;
 
   return {
     osk,
+    settings,
     showRing(rect) {
       if (!rect) {
         ring.style.display = 'none';
@@ -97,7 +115,7 @@ export function createOverlay() {
       toastTimer = setTimeout(() => toast.classList.remove('show'), ms);
     },
     setHelp(rows) {
-      help.innerHTML = '<h2>Controller</h2><table></table><p>Press View again to close. F11 or View + Menu toggles full screen.</p>';
+      help.innerHTML = '<h2>Controller</h2><table></table><p>Press View again to close. View + Y opens settings. F11 or View + Menu toggles full screen.</p>';
       const table = help.querySelector('table');
       for (const [button, action] of rows) {
         const tr = document.createElement('tr');

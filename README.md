@@ -20,17 +20,18 @@ See [docs/PLAN.md](docs/PLAN.md) for the design.
 | Right stick click | Hang up / leave voice |
 | Menu | Quick switcher (jump to any server, channel or DM) |
 | View | Button help |
+| View + Y | Settings menu |
 | View + Menu, or F11 | Toggle full screen |
 
 Landing on any text field (message box, search, quick switcher) shows a hint; press A to open the on-screen keyboard. On-screen keyboard: A types, X deletes, Y space, LT shift, Menu sends, B closes.
 
-Button mapping, zoom and full screen live in `%APPDATA%\Discord Pad\settings.json`.
+Hold View and press Y for the settings menu: full screen, zoom, cursor hiding, call rumble, which Discord elements to hide, and what every button does. Changes apply immediately and are saved to `%APPDATA%\Discord Pad\settings.json`, which you can still edit by hand.
 
 ## Hiding Discord elements
 
 Two layers of CSS overrides are applied on top of Discord:
 
-**Presets**, toggled in the `hide` section of `settings.json` (restart the app after changing them):
+**Presets**, toggled in the settings menu (or the `hide` section of `settings.json`):
 
 | Preset | Hides | Default |
 |---|---|---|
