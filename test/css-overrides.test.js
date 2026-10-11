@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {
-  PRESETS, CUSTOM_CSS_TEMPLATE, defaultHide, buildCss, readCustomCss, customCssPath,
+  COUCH_CSS, PRESETS, CUSTOM_CSS_TEMPLATE, defaultHide, buildCss, readCustomCss, customCssPath,
 } = require('../src/main/css-overrides');
 const settings = require('../src/main/settings');
 
@@ -64,4 +64,21 @@ test('loading old settings writes new options back to the file', () => {
   assert.equal(saved.zoomFactor, 1.5);
   assert.equal(saved.hide.nitroUpsells, true);
   fs.rmSync(dir, { recursive: true });
+});
+
+test('Couch UI CSS goes first so presets and custom.css can override it', () => {
+  const css = buildCss({ giftButton: true }, '.mine {}', { couchUi: true });
+  assert.ok(css.indexOf('couch-ui') < css.indexOf('Send a gift'));
+  assert.ok(css.indexOf('Send a gift') < css.indexOf('.mine {}'));
+  assert.doesNotMatch(buildCss({}, '', { couchUi: false }), /data-dp-region/);
+});
+
+test('Couch UI CSS only targets adapter markers and theme variables', () => {
+  // Guard against broad rules that could break Discord's layout.
+  const selectors = COUCH_CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('}').map((block) => block.split('{')[0].trim()).filter(Boolean);
+  for (const sel of selectors) {
+    if (sel.startsWith('@media')) continue;
+    assert.match(sel, /data-dp-/, sel);
+  }
 });

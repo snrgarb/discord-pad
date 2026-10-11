@@ -1,0 +1,134 @@
+/*
+ * Couch UI: TV-friendly restyle of Discord (design: docs/design/couch).
+ *
+ * Only styles elements the preload adapter (src/preload/adapter.mjs) has
+ * marked with data-dp-* attributes, plus Discord's own theme variables, so
+ * Discord's layout, modals and side panels keep working. Never change the
+ * display/position of Discord's app root here.
+ */
+
+/* Theme: retint Discord through its own colour variables. Nested theme
+   containers (popouts, modals) redefine them, so set them there too. */
+html[data-dp-root="true"],
+html[data-dp-root="true"] .theme-dark,
+html[data-dp-root="true"] .theme-darker,
+html[data-dp-root="true"] .theme-midnight,
+html[data-dp-root="true"] .visual-refresh {
+  --dp-bg: #111824;
+  --dp-panel: #182231;
+  --dp-raised: #1f2b3d;
+  --dp-selected: #273651;
+  --dp-focus: #a1adff;
+  --dp-text: #f0f4ff;
+  --dp-muted: #a2afc7;
+  --dp-connected: #55dca3;
+  --dp-danger: #ff7990;
+  --dp-radius: 12px;
+
+  --background-primary: var(--dp-bg) !important;
+  --background-secondary: var(--dp-panel) !important;
+  --background-secondary-alt: var(--dp-raised) !important;
+  --background-tertiary: #0c121c !important;
+  --background-floating: var(--dp-raised) !important;
+  --background-base-lowest: #0c121c !important;
+  --background-base-lower: var(--dp-bg) !important;
+  --background-base-low: var(--dp-panel) !important;
+  --background-surface-high: var(--dp-raised) !important;
+  --background-surface-higher: var(--dp-raised) !important;
+  --background-surface-highest: var(--dp-selected) !important;
+  --background-modifier-hover: rgba(161, 173, 255, 0.08) !important;
+  --background-modifier-selected: var(--dp-selected) !important;
+  --background-modifier-active: var(--dp-selected) !important;
+  --chat-background: var(--dp-bg) !important;
+  --channeltextarea-background: var(--dp-raised) !important;
+  --modal-background: var(--dp-panel) !important;
+  --text-normal: var(--dp-text) !important;
+  --text-default: var(--dp-text) !important;
+  --text-muted: var(--dp-muted) !important;
+  --header-primary: var(--dp-text) !important;
+  --header-secondary: var(--dp-muted) !important;
+  --channels-default: var(--dp-muted) !important;
+  --interactive-normal: var(--dp-muted) !important;
+  --interactive-hover: var(--dp-text) !important;
+  --interactive-active: var(--dp-text) !important;
+  --status-positive: var(--dp-connected) !important;
+  --status-danger: var(--dp-danger) !important;
+}
+
+/* Columns: wider server rail and channel list (sizes from the design). */
+[data-dp-region="servers"] {
+  width: 88px !important;
+  min-width: 88px !important;
+  flex: 0 0 88px !important;
+  background: var(--dp-bg) !important;
+}
+[data-dp-region="channels"] {
+  width: 340px !important;
+  min-width: 340px !important;
+  flex: 0 0 340px !important;
+  background: var(--dp-panel) !important;
+}
+[data-dp-region="main"] {
+  min-width: 0;
+}
+
+/* Bigger targets in the channel and DM lists. */
+[data-dp-role="channel"],
+[data-dp-role="dm"] {
+  box-sizing: border-box;
+  min-height: 56px !important;
+  border-radius: var(--dp-radius) !important;
+  font-size: 18px !important;
+  scroll-margin-block: 80px;
+  display: flex !important;
+  align-items: center !important;
+}
+/* Keep the row's own content full width inside the centred row. */
+[data-dp-role="channel"] > *,
+[data-dp-role="dm"] > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+[data-dp-role="server"] {
+  scroll-margin-block: 65px;
+}
+
+/* Selected (open) is a filled row with an accent bar; focused (where A
+   goes) is the controller ring, so the two never look the same. */
+[data-dp-role="channel"][data-dp-selected="true"],
+[data-dp-role="dm"][data-dp-selected="true"] {
+  background-color: var(--dp-selected) !important;
+  box-shadow: inset 4px 0 0 var(--dp-focus);
+  color: var(--dp-text) !important;
+}
+
+/* The overlay ring is the canonical focus indicator; this tint marks the
+   focused element as well in case the ring is hidden behind a layer. */
+[data-dp-focus="true"] {
+  background-color: rgba(161, 173, 255, 0.12) !important;
+}
+
+/* Readable chat. */
+[data-dp-role="message"] {
+  line-height: 1.5 !important;
+}
+[data-dp-role="message"] [id^="message-content-"] {
+  font-size: 1.125rem !important;
+}
+[data-dp-role="composer"] {
+  min-height: 62px !important;
+  border-radius: 13px !important;
+  font-size: 1.125rem !important;
+}
+
+/* Only hide what the adapter positively identified as non-essential. */
+html[data-dp-mode="couch"] [data-dp-role="secondary"] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-dp-root="true"] * {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+  }
+}

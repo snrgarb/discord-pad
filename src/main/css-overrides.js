@@ -60,6 +60,7 @@ const PRESETS = Object.freeze({
 });
 
 const CUSTOM_CSS_FILE = 'custom.css';
+const COUCH_CSS = fs.readFileSync(path.join(__dirname, 'couch.css'), 'utf8');
 
 const CUSTOM_CSS_TEMPLATE = `/*
  * Discord Pad custom CSS. Loaded after the built-in presets and re-applied
@@ -75,11 +76,13 @@ function defaultHide() {
   return Object.fromEntries(Object.entries(PRESETS).map(([id, p]) => [id, p.default]));
 }
 
-// The CSS for the enabled presets followed by the user's custom CSS.
-function buildCss(hide, customCss = '') {
-  const parts = Object.entries(PRESETS)
+// Couch UI theme (if on), then the enabled presets, then the user's custom
+// CSS, so each layer can override the one before it.
+function buildCss(hide, customCss = '', { couchUi = false } = {}) {
+  const parts = couchUi ? [`/* couch-ui */\n${COUCH_CSS}`] : [];
+  parts.push(...Object.entries(PRESETS)
     .filter(([id]) => hide[id])
-    .map(([id, p]) => `/* ${id} */${p.css}`);
+    .map(([id, p]) => `/* ${id} */${p.css}`));
   if (customCss.trim()) parts.push(`/* custom.css */\n${customCss}`);
   return parts.join('\n');
 }
@@ -109,10 +112,10 @@ function readCustomCss(userDataDir) {
 // Keeps the override stylesheet applied to a webContents: re-inserted on
 // every page load and whenever custom.css changes.
 class CssOverrides {
-  constructor(webContents, { userDataDir, getHide }) {
+  constructor(webContents, { userDataDir, getSettings }) {
     this.wc = webContents;
     this.userDataDir = userDataDir;
-    this.getHide = getHide;
+    this.getSettings = getSettings;
     this.key = null;
     this.watcher = null;
     this.debounce = null;
@@ -128,7 +131,8 @@ class CssOverrides {
   }
 
   async apply() {
-    const css = buildCss(this.getHide(), readCustomCss(this.userDataDir));
+    const settings = this.getSettings();
+    const css = buildCss(settings.hide, readCustomCss(this.userDataDir), { couchUi: settings.couchUi });
     const previous = this.key;
     this.key = null;
     try {
@@ -158,5 +162,5 @@ class CssOverrides {
 }
 
 module.exports = {
-  PRESETS, CUSTOM_CSS_TEMPLATE, defaultHide, buildCss, readCustomCss, customCssPath, CssOverrides,
+  COUCH_CSS, PRESETS, CUSTOM_CSS_TEMPLATE, defaultHide, buildCss, readCustomCss, customCssPath, CssOverrides,
 };

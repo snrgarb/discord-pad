@@ -10,6 +10,10 @@ const CSS = `
   transition: left .08s ease-out, top .08s ease-out, width .08s ease-out, height .08s ease-out;
   display: none;
 }
+:host([data-theme="couch"]) .ring {
+  border-color: #a1adff; border-radius: 12px;
+  box-shadow: 0 0 0 3px rgba(17,24,36,.85), 0 0 22px rgba(161,173,255,.55);
+}
 .toast {
   position: fixed; left: 50%; bottom: 48px; transform: translateX(-50%);
   background: rgba(17,18,20,.95); color: #fff; padding: 14px 24px; border-radius: 12px;
@@ -126,6 +130,10 @@ export function createOverlay() {
         tr.append(a, b);
         table.append(tr);
       }
+    },
+    setTheme(name) {
+      if (name) host.setAttribute('data-theme', name);
+      else host.removeAttribute('data-theme');
     },
     toggleHelp(force) {
       return panel.classList.toggle('show', force);
